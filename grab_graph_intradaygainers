@@ -1,0 +1,61 @@
+import sqlalchemy
+import os
+import pandas as pd
+import psycopg2 as ps
+import matplotlib.pyplot as plt
+pd.set_option('display.max_columns', None)
+import requests
+os.environ['IEX_TOKEN']="Your_token"
+
+
+def getHistoricalPrices(stock):
+    from iexfinance.stocks import get_historical_data
+    from iexfinance.stocks import Stock
+    from datetime import datetime 
+    from datetime import date
+    start = datetime(2019, 1, 1)
+    end = date.today()
+    return get_historical_data(stock, start, end, 
+                               output_format='pandas')
+
+def getstockPeers(stock):
+    from iexfinance.stocks import Stock
+    df = get_relevant_stocks(stock,output_format='pandas')
+    return df.head()
+
+
+def getTimeSeries(stock):
+    import matplotlib.pyplot as plt
+    from sklearn.linear_model import LinearRegression
+    import numpy as np
+    df = getHistoricalPrices(stock)
+    df.plot(y=['close','high','low'],legend=True, title= "Close| High | Low")
+    df.plot(y=['volume'], legend=True, title='Stock Daily Volume')
+    df.hist()
+    
+def grab_gainers_symbols():
+    from iexfinance.stocks import get_market_gainers
+    gainer = get_market_gainers(output_format='pandas')
+    
+    data_top = gainer.head(10)  
+    
+    data = list(data_top.index.values.tolist()) 
+    return data
+
+
+def grab_intra_day_gainers():
+    from iexfinance.stocks import Stock
+    batch = Stock(grab_gainers_symbols())
+    data = batch.get_quote()
+    df = pd.DataFrame(data)
+    intra_day = df.transpose() 
+    return intra_day.head(10)
+    
+    
+def main():
+  for i in grab_gainers_symbols():
+    getTimeSeries(i)
+  return True
+  
+if __name__ == "__main__":
+    main()
